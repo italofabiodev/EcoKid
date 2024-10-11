@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura do Lixo Eletrônico</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #e6f3ff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .item {
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .item:hover {
+            transform: scale(1.1);
+        }
+        .item img {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        #score, #level {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 50px;
+        }
+        #info-modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 15px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        #achievements {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #8e44ad;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aventura do Lixo Eletrônico</h1>
+        <p>Ajude a salvar o planeta! Clique nos itens de lixo eletrônico para reciclá-los.</p>
+        <div id="score">Pontuação: 0</div>
+        <div id="level">Nível: 1</div>
+        <div class="game-area" id="gameArea"></div>
+        <div id="message"></div>
+        <div id="achievements"></div>
+    </div>
+
+    <div id="info-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <p id="modal-text"></p>
+        </div>
+    </div>
+
+    <script>
+        const items = [
+            { name: 'Celular', points: 10, info: 'Celulares contêm metais preciosos que podem ser recuperados. Leve-os a pontos de coleta especializados.', image: 'https://images.unsplash.com/photo-1585789575907-1cce3586e3a6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+            { name: 'Computador', points: 20, info: 'Computadores têm muitos componentes recicláveis. Desmonte-os e recicle cada parte separadamente.', image: 'https://images.unsplash.com/photo-1587614382346-4ec70e388b28?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+            { name: 'Tablet', points: 15, info: 'Tablets, assim como celulares, contêm baterias que precisam de tratamento especial. Não jogue no lixo comum!', image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+            { name: 'Impressora', points: 25, info: 'Impressoras contêm cartuchos de tinta que são altamente poluentes. Recicle-os separadamente.', image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+            { name: 'Televisão', points: 30, info: 'TVs antigas contêm tubos de raios catódicos que são perigosos. Sempre recicle com profissionais.', image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+            { name: 'Fone de ouvido', points: 5, info: 'Fones de ouvido contêm pequenos componentes eletrônicos. Junte vários antes de levar para reciclar.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' }
+        ];
+
+        let score = 0;
+        let level = 1;
+        let clickedItems = new Set();
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const messageElement = document.getElementById('message');
+        const achievementsElement = document.getElementById('achievements');
+        const gameArea = document.getElementById('gameArea');
+        const modal = document.getElementById('info-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const closeModal = document.getElementsByClassName('close')[0];
+
+        // Audio context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+
+        // Sound buffers
+        const soundBuffers = {};
+
+        // Load sounds
+        const sounds = {
+            success: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',
+            error: 'https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3',
+            levelup: 'https://assets.mixkit.co/active_storage/sfx/1997/1997-preview.mp3',
+            achievement: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'
+        };
+
+        Object.entries(sounds).forEach(([name, url]) => {
+            fetch(url)
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                .then(audioBuffer => {
+                    soundBuffers[name] = audioBuffer;
+                });
+        });
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function updateGameArea() {
+            gameArea.innerHTML = '';
+            shuffleArray(items);
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.onclick = () => recycle(item);
+                itemDiv.innerHTML = `<img src="${item.image}" alt="${item.name}" />`;
+                gameArea.appendChild(itemDiv);
+            });
+        }
+
+        function recycle(item) {
+            if (!clickedItems.has(item.name)) {
+                score += item.points * level;
+                clickedItems.add(item.name);
+                scoreElement.textContent = `Pontuação: ${score}`;
+                messageElement.textContent = `Ótimo! Você reciclou um ${item.name}!`;
+                playSound('success');
+                showItemInfo(item);
+                checkLevelUp();
+                checkAchievements();
+            } else {
+                messageElement.textContent = `Você já reciclou ${item.name}. Tente outro item!`;
+                playSound('error');
+            }
+        }
+
+        function checkLevelUp() {
+            if (clickedItems.size === items.length) {
+                level++;
+                levelElement.textContent = `Nível: ${level}`;
+                messageElement.textContent = `Parabéns! Você avançou para o nível ${level}!`;
+                clickedItems.clear();
+                updateGameArea();
+                playSound('levelup');
+            }
+        }
+
+        function checkAchievements() {
+            const achievements = [
+                { name: 'Reciclador Iniciante', score: 100, message: 'Você ganhou a conquista "Reciclador Iniciante"!' },
+                { name: 'Mestre da Reciclagem', score: 500, message: 'Você ganhou a conquista "Mestre da Reciclagem"!' },
+                { name: 'Salvador do Planeta', score: 1000, message: 'Você ganhou a conquista "Salvador do Planeta"!' }
+            ];
+
+            achievements.forEach(achievement => {
+                if (score >= achievement.score && !achievementsElement.textContent.includes(achievement.name)) {
+                    achievementsElement.textContent += `${achievement.message} `;
+                    playSound('achievement');
+                }
+            });
+        }
+
+        function showItemInfo(item) {
+            modalTitle.textContent = item.name;
+            modalText.textContent = item.info;
+            modal.style.display = 'block';
+        }
+
+        closeModal.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function playSound(soundType) {
+            if (soundBuffers[soundType]) {
+                const source = audioContext.createBufferSource();
+                source.buffer = soundBuffers[soundType];
+                source.connect(audioContext.destination);
+                source.start();
+            }
+        }
+
+        updateGameArea();
+    </script>
+</body>
+</html>
